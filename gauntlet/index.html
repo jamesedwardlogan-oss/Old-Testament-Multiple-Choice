@@ -10,7 +10,33 @@ function updateHud(){$('lives').textContent='❤️'.repeat(Math.max(0,state.liv
 function setStage(){let names=['lava','bomb','treasure','boss'],enemies=['🌋','💣','💎','🐉'];$('stage').className='stage '+names[state.level];$('enemy').textContent=enemies[state.level];$('hero').textContent=state.lives<=1?'😰':'🧙';$('vs').textContent=state.level===3?'⚔️':'VS';$('bossArea').classList.toggle('hidden',state.level!==3)}
 function makeQuestions(level){const q=[];if(level===0){for(const i of shuffle(Array.from({length:38},(_,i)=>i)).slice(0,8)){const answer=BOOKS[i+1];const wrong=shuffle(BOOKS.filter(b=>b!==answer&&b!==BOOKS[i])).slice(0,3);q.push({text:'What book comes immediately AFTER '+BOOKS[i]+'?',answer,options:shuffle([answer,...wrong])})}}else if(level===1){for(let k=0;k<8;k++){const i=Math.floor(Math.random()*35);const seq=BOOKS.slice(i,i+5);const pos=Math.floor(Math.random()*5);const swap=shuffle(BOOKS.filter(b=>!seq.includes(b)))[0];const shown=[...seq];shown[pos]=swap;q.push({text:'Which book does NOT belong in this sequence?',answer:swap,options:shuffle(shown.slice(0,5)),hint:seq.join(' → '),sequence:shown.join('  →  ')})}}else if(level===2){for(const book of shuffle(BOOKS).slice(0,8)){q.push({text:shuffle(book.replaceAll(' ','').split('')).join('').toUpperCase(),answer:book})}}else{for(const book of shuffle(BOOKS).slice(0,10)){const idx=BOOKS.indexOf(book),mode=Math.floor(Math.random()*3);if(mode===0){const answer=book;const wrong=shuffle(BOOKS.filter(x=>x!==answer)).slice(0,3);q.push({text:'Which Bible book is number '+(idx+1)+'?',answer,options:shuffle([answer,...wrong])})}else if(mode===1&&idx<38){const answer=BOOKS[idx+1];const wrong=shuffle(BOOKS.filter(x=>x!==answer)).slice(0,3);q.push({text:'What comes AFTER '+book+'?',answer,options:shuffle([answer,...wrong])})}else{q.push({text:'Spell the Bible book: '+book.slice(0,Math.max(1,Math.floor(book.length/2)))+'… ('+book.length+' characters including spaces)',answer:book,typing:true})}}}return q}
 function startLevel(){state.round=0;state.questions=makeQuestions(state.level);locked=false;setStage();updateHud();showQuestion()}
-function showQuestion(){if(advanceTimer)clearTimeout(advanceTimer);advanceTimer=null;locked=false;current=state.questions[state.round];if(!current){finishLevel();return}setStage();$('feedback').textContent='';$('feedback').className='feedback';$('continue').classList.add('hidden');$('eyebrow').textContent=['🌋 LEVEL 1 — THE LAVA FLOOR','💣 LEVEL 2 — BOMB SQUAD','💰 LEVEL 3 — TREASURE HUNT','👑 LEVEL 4 — FINAL BOSS'][state.level];$('question').textContent=current.sequence||current.text;$('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.questions.length;$('pct').textContent=Math.round(100*state.round/state.questions.length)+'%';$('progress').style.width=100*state.round/state.questions.length+'%';$('bossHealth').textContent=state.boss+' / 10';$('bossBar').style.width=(state.boss*10)+'%';const isTyping=state.level===2||current.typing;$('choices').classList.toggle('hidden',isTyping);$('typing').classList.toggle('hidden',!isTyping);if(isTyping){$('answer').value='';$('answer').disabled=false;$('answer').focus()}else{const wrap=$('choices');wrap.replaceChildren();for(const opt of current.options){const b=document.createElement('button');b.className='choice';b.textContent=opt;b.onclick=()=>respond(opt,b);wrap.appendChild(b)}}}
+function showQuestion(){
+ if(advanceTimer)clearTimeout(advanceTimer);advanceTimer=null;locked=false;
+ current=state.questions[state.round];if(!current){finishLevel();return}
+ setStage();$('feedback').textContent='';$('feedback').className='feedback';$('continue').classList.add('hidden');
+ $('eyebrow').textContent=['🌋 LEVEL 1 — THE LAVA FLOOR','💣 LEVEL 2 — BOMB SQUAD','💰 LEVEL 3 — TREASURE HUNT','👑 LEVEL 4 — FINAL BOSS'][state.level];
+ $('question').textContent=current.sequence||current.text;
+ $('roundLabel').textContent='ROUND '+(state.round+1)+' / '+state.questions.length;
+ $('pct').textContent=Math.round(100*state.round/state.questions.length)+'%';
+ $('progress').style.width=100*state.round/state.questions.length+'%';
+ $('bossHealth').textContent=state.boss+' / 10';$('bossBar').style.width=(state.boss*10)+'%';
+ const isTyping=Boolean(state.level===2||current.typing);
+ const wrap=$('choices');const type=$('typing');
+ wrap.replaceChildren();
+ if(isTyping){
+   wrap.classList.add('hidden');wrap.style.display='none';
+   type.classList.remove('hidden');type.style.display='block';
+   $('answer').value='';$('answer').disabled=false;$('answer').focus();
+ }else{
+   type.classList.add('hidden');type.style.display='none';
+   wrap.classList.remove('hidden');wrap.style.display='grid';
+   const options=Array.isArray(current.options)&&current.options.length?current.options:shuffle([current.answer,...shuffle(BOOKS.filter(x=>x!==current.answer)).slice(0,3)]);
+   for(const opt of options){
+     const b=document.createElement('button');b.type='button';b.className='choice';b.textContent=opt;
+     b.addEventListener('click',()=>respond(opt,b));wrap.appendChild(b);
+   }
+ }
+}
 function respond(value,button){if(locked)return;locked=true;const correct=norm(value)===norm(current.answer);if(correct){state.score+=100;state.coins+=state.level===2?25:10;sound('good');$('feedback').className='feedback good';$('feedback').textContent=state.level===3?'⚔️ DIRECT HIT! The dragon takes damage!':'✓ CORRECT! +100 points!';if(state.level===3)state.boss--}else{state.lives--;sound('bad');$('stage').classList.add('shake');setTimeout(()=>$('stage').classList.remove('shake'),500);$('feedback').className='feedback bad';$('feedback').textContent='💥 OUCH! Correct answer: '+current.answer+' — You lost a life!'}if(button){for(const b of $('choices').children){b.disabled=true;if(norm(b.textContent)===norm(current.answer))b.classList.add('correct');else if(b===button&&!correct)b.classList.add('wrong')}}else $('answer').disabled=true;updateHud();$('bossHealth').textContent=state.boss+' / 10';$('bossBar').style.width=(state.boss*10)+'%';$('continue').textContent=state.lives<=0?'SEE RESULTS':'NEXT CHALLENGE ➜';$('continue').classList.remove('hidden');advanceTimer=setTimeout(nextChallenge,1800)}
 function nextChallenge(){if(advanceTimer){clearTimeout(advanceTimer);advanceTimer=null}if(!locked)return;if(state.lives<=0){gameOver();return}if(state.level===3&&state.boss===0){victory();return}state.round+=1;if(state.round>=state.questions.length){finishLevel();return}showQuestion()}
 $('continue').addEventListener('click',nextChallenge);
