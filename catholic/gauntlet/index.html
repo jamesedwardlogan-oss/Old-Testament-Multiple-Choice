@@ -86,7 +86,7 @@ i=rand(5,37);puzzles.push({text:'DRAGON RIDDLE VIII: Which book comes 2 places B
 i=rand(7,37);puzzles.push({text:'DRAGON RIDDLE IX: TYPE the book that comes 6 places AFTER the book 4 places BEFORE '+BOOKS[i]+'.',answer:BOOKS[i+2],typing:true});
 i=rand(5,39);puzzles.push({text:'DRAGON RIDDLE X — FINAL BLOW: Count 5 books BACK from '+BOOKS[i]+', then 9 books FORWARD, then 3 books BACK. TYPE the final book to defeat the dragon.',answer:BOOKS[i+1],typing:true});
 q.push(...puzzles);
-}}return q}
+}return q}
 function startLevel(){state.round=0;state.questions=makeQuestions(state.level);locked=false;setStage();updateHud();showQuestion()}
 function showQuestion(){
  clearBossCountdown();$('bossTimer').classList.add('hidden');
