@@ -87,7 +87,7 @@ const LEVEL_GUIDES=[
  {icon:'🌋',title:'LEVEL 1 — THE LAVA FLOOR',body:'The floor is lava! You will see a Bible book and four choices. CLICK the book that comes IMMEDIATELY AFTER it in the Old Testament. Example: After Genesis comes Exodus. Answer 8 questions to escape the lava!'},
  {icon:'💣',title:'LEVEL 2 — BOMB SQUAD',body:'BE CAREFUL! You will see a row of FIVE Bible books, but ONE of them is an impostor. Four books belong together in their correct Old Testament order; one has been swapped out. CLICK THE BOOK THAT DOES NOT BELONG. Example: Genesis → Exodus → Psalms → Numbers → Deuteronomy. Click PSALMS because Leviticus should be there instead. Find the impostor in 8 rounds to defuse the bombs!'},
  {icon:'💰',title:'LEVEL 3 — TREASURE HUNT',body:'The treasure is locked behind scrambled words! Each puzzle shows the LETTERS of an Old Testament book mixed up. TYPE the correct book name to unlock the treasure. Example: SNEGEIS = GENESIS. Spelling matters, but capital letters do not. Solve 8 puzzles to reach the dragon!'},
- {icon:'🐉',title:'LEVEL 4 — LOGANAX, THE KEEPER OF THE SCROLLS',body:'You have survived the Gauntlet. But can you defeat my dragon? He is my Final Boss. Prove your knowledge, and reveal my treasure. ⚔️ COACH LOGAN\'S DRAGON: You have only 20 SECONDS per question! The countdown gets shorter as Loganax loses health. Questions change every attempt and include Bible events. Running out of time costs a life. DEFEAT THE DRAGON! It has 10 health points. Each CORRECT answer deals ONE hit and removes ONE health point. NIGHTMARE DIFFICULTY: The dragon asks 10 BRUTAL 46-book canon-order riddles involving multiple steps, counting backward and forward, exact positions, and identifying books between other books. Most answers MUST BE TYPED with correct spelling. There are NO partial-spelling hints. Wrong answers cost one of your lives. Land 10 correct hits to defeat the dragon!'}
+ {icon:'🐉',title:'LEVEL 4 — LOGANAX, THE KEEPER OF THE SCROLLS',body:'You have survived the Gauntlet. But can you defeat my dragon? He is my Final Boss. Prove your knowledge, and reveal my treasure. ⚔️ COACH LOGAN\'S DRAGON: You have only 20 SECONDS per question! The countdown gets shorter as Loganax loses health. Questions change every attempt and test only Old Testament order and spelling. Running out of time costs a life. DEFEAT THE DRAGON! It has 10 health points. Each CORRECT answer deals ONE hit and removes ONE health point. NIGHTMARE DIFFICULTY: The dragon asks 10 BRUTAL 46-book canon-order riddles involving multiple steps, counting backward and forward, exact positions, and identifying books between other books. Most answers MUST BE TYPED with correct spelling. There are NO partial-spelling hints. Wrong answers cost one of your lives. Land 10 correct hits to defeat the dragon!'}
 ];
 function showLevelGuide(){
  const g=LEVEL_GUIDES[state.level];setStage();updateHud();
@@ -107,20 +107,28 @@ function bossEffect(kind){
  if(kind!=='defeated')setTimeout(()=>stage.classList.remove(kind),1450);
 }
 function makeQuestions(level){const q=[];if(level===0){for(const i of shuffle(Array.from({length:BOOKS.length-1},(_,i)=>i)).slice(0,8)){const answer=BOOKS[i+1];const wrong=shuffle(BOOKS.filter(b=>b!==answer&&b!==BOOKS[i])).slice(0,3);q.push({text:'What book comes immediately AFTER '+BOOKS[i]+'?',answer,options:shuffle([answer,...wrong])})}}else if(level===1){for(let k=0;k<8;k++){const i=Math.floor(Math.random()*(BOOKS.length-4));const seq=BOOKS.slice(i,i+5);const pos=Math.floor(Math.random()*5);const swap=shuffle(BOOKS.filter(b=>!seq.includes(b)))[0];const shown=[...seq];shown[pos]=swap;q.push({text:'Which book does NOT belong in this sequence?',answer:swap,options:shuffle(shown.slice(0,5)),hint:seq.join(' → '),sequence:shown.join('  →  ')})}}else if(level===2){for(const book of shuffle(BOOKS).slice(0,8)){q.push({text:shuffle(book.replaceAll(' ','').split('')).join('').toUpperCase(),answer:book})}}else{
+// LOGANAX: only Old Testament ORDER and SPELLING. Fresh puzzles on every run.
 const rand=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
-const trivia=[["Where does the burning bush appear?","Exodus"],["Where does Jericho fall?","Joshua"],["Where does David defeat Goliath?","1 Samuel"],["Which book tells of Ruth and Boaz?","Ruth"],["Where does Elijah confront Baal's prophets?","1 Kings"],["Where does Elisha heal Naaman?","2 Kings"],["Which book describes Nehemiah rebuilding Jerusalem's walls?","Nehemiah"],["Which book tells of Esther becoming queen?","Esther"],["Where is the valley of dry bones vision?","Ezekiel"],["Where are three men thrown into a fiery furnace?","Daniel"],["Which book tells of Jonah and the great fish?","Jonah"],["Where is the suffering servant prophecy in chapter 53?","Isaiah"],["Where is Abraham tested with Isaac?","Genesis"],["Where is Solomon's temple dedicated?","1 Kings"],["Where is the Book of the Law found under Josiah?","2 Kings"],["Which book contains the vision of a flying scroll?","Zechariah"],["Where does Gideon lead 300 men?","Judges"],["Which book commands love for your neighbor as yourself?","Leviticus"],["Which book tells of Balaam's donkey?","Numbers"],["Which book contains Moses' farewell speeches?","Deuteronomy"]];
 const pool=[];
-for(const [text,answer] of trivia)if(BOOKS.includes(answer))pool.push({text:'DRAGON LORE: '+text,answer,typing:true});
-for(let k=0;k<36;k++){const i=rand(5,BOOKS.length-8),mode=k%6;
-if(mode===0){const n=rand(3,7);pool.push({text:'What is book NUMBER '+(i+n+1)+' of the Old Testament?',answer:BOOKS[i+n],typing:true});}
-if(mode===1){const x=rand(2,5),y=rand(2,5);pool.push({text:'SHIFTING SCROLLS: Start at '+BOOKS[i]+'. Go '+x+' BACK, then '+y+' FORWARD. Name the destination.',answer:BOOKS[i-x+y],typing:true});}
-if(mode===2)pool.push({text:'MISSING SCROLL: '+BOOKS[i]+' → ? → '+BOOKS[i+2]+'. Name the missing book.',answer:BOOKS[i+1],typing:true});
-if(mode===3)pool.push({text:'DRAGON DECEPTION: TRUE or FALSE? '+BOOKS[i]+' comes immediately before '+BOOKS[i+rand(2,4)]+'.',answer:'FALSE',options:['TRUE','FALSE']});
-if(mode===4)pool.push({text:'DRAGON DECEPTION: TRUE or FALSE? '+BOOKS[i]+' comes immediately before '+BOOKS[i+1]+'.',answer:'TRUE',options:['TRUE','FALSE']});
-if(mode===5)pool.push({text:'Which book is exactly halfway between '+BOOKS[i-2]+' and '+BOOKS[i+2]+'?',answer:BOOKS[i],typing:true});
+const scramble=book=>{const chars=book.replaceAll(' ','').toUpperCase().split('');let result=chars.join('');for(let tries=0;tries<12&&result===chars.join('');tries++)result=shuffle(chars).join('');return result;};
+for(const book of shuffle(BOOKS).slice(0,20)){
+ pool.push({text:'DRAGON SPELLING: Unscramble these letters and TYPE the correctly spelled book: '+scramble(book),answer:book,typing:true,kind:'spelling'});
 }
-q.push(...shuffle([...shuffle(pool.filter(p=>p.text.startsWith('DRAGON LORE'))).slice(0,7),...shuffle(pool.filter(p=>!p.text.startsWith('DRAGON LORE'))).slice(0,11)]));
+for(let k=0;k<72;k++){
+ const i=rand(6,BOOKS.length-9),mode=k%9;
+ if(mode===0){const a=rand(3,7),b=rand(2,5);pool.push({text:'SHIFTING SCROLLS: Start at '+BOOKS[i]+'. Move '+a+' BACK, then '+b+' FORWARD. TYPE the destination.',answer:BOOKS[i-a+b],typing:true,kind:'order'});}
+ if(mode===1){const a=rand(2,5),b=rand(3,7);pool.push({text:'DRAGON REVERSE: Start at '+BOOKS[i]+'. Move '+a+' FORWARD, then '+b+' BACK. TYPE the final book.',answer:BOOKS[i+a-b],typing:true,kind:'order'});}
+ if(mode===2){pool.push({text:'THE MISSING SCROLL: '+BOOKS[i]+' → _____ → '+BOOKS[i+2]+'. TYPE the missing book.',answer:BOOKS[i+1],typing:true,kind:'order'});}
+ if(mode===3){const offset=rand(3,6);pool.push({text:'DRAGON DECEPTION: TRUE or FALSE? '+BOOKS[i]+' comes immediately BEFORE '+BOOKS[i+offset]+'.',answer:'FALSE',options:['TRUE','FALSE'],kind:'order'});}
+ if(mode===4){pool.push({text:'DRAGON DECEPTION: TRUE or FALSE? '+BOOKS[i]+' comes immediately BEFORE '+BOOKS[i+1]+'.',answer:'TRUE',options:['TRUE','FALSE'],kind:'order'});}
+ if(mode===5){const gap=rand(2,4);pool.push({text:'THE HIDDEN CENTER: Which book is EXACTLY halfway between '+BOOKS[i-gap]+' and '+BOOKS[i+gap]+'? TYPE it.',answer:BOOKS[i],typing:true,kind:'order'});}
+ if(mode===6){const shift=rand(3,7);pool.push({text:'NUMBERED SCROLL: '+BOOKS[i]+' is book #'+(i+1)+'. Which book is #'+(i+1+shift)+'? TYPE it.',answer:BOOKS[i+shift],typing:true,kind:'order'});}
+ if(mode===7){const a=rand(2,4),b=rand(2,4),c=rand(1,3);pool.push({text:'THREE MOVES: Start at '+BOOKS[i]+'. Go '+a+' BACK, '+b+' FORWARD, then '+c+' BACK. TYPE the result.',answer:BOOKS[i-a+b-c],typing:true,kind:'order'});}
+ if(mode===8){pool.push({text:'REPAIR THE SCROLL: '+BOOKS[i]+' → '+BOOKS[i+2]+' → '+BOOKS[i+1]+' → '+BOOKS[i+3]+'. TYPE the book that should be SECOND.',answer:BOOKS[i+1],typing:true,kind:'order'});}
+}
+q.push(...shuffle([...shuffle(pool.filter(p=>p.kind==='spelling')).slice(0,6),...shuffle(pool.filter(p=>p.kind==='order')).slice(0,12)]));
 }return q}
+
 function startLevel(){state.round=0;state.questions=makeQuestions(state.level);locked=false;setStage();updateHud();showQuestion()}
 function showQuestion(){
  clearBossCountdown();$('bossTimer').classList.add('hidden');
