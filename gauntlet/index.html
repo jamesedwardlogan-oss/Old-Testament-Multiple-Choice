@@ -76,10 +76,27 @@ async function dragonSubmitVictory(){
 <script>
 'use strict';const BOOKS=["Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth","1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra","Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon","Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos","Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi"];const $=id=>document.getElementById(id);const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};let state,clockTimer,advanceTimer=null,bossCountdown=null,bossDeadline=0,audio,muted=false,locked=false,current=null,modalAction=null;
 const BOSS_SECONDS=20;
+
+// Loganax's final two health points: spot one subtle misspelling among twelve books.
+function dragonFinalSpelling(){
+ const preferred=['Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Nehemiah','Deuteronomy','Zephaniah','Habakkuk','Obadiah','Zechariah','Leviticus','1 Chronicles','2 Chronicles','1 Thessalonians','Malachi','Haggai','Ezekiel','Proverbs','Numbers','Wisdom','Sirach','Baruch','Judith','Tobit','1 Maccabees','2 Maccabees'];
+ const eligible=preferred.filter(b=>BOOKS.includes(b));
+ const selected=shuffle(eligible).slice(0,12);
+ const target=shuffle(selected.filter(b=>b.replace(/[^A-Za-z]/g,'').length>=6))[0];
+ const typoCandidates=[];
+ for(let j=0;j<target.length;j++){
+  if(!/[A-Za-z]/.test(target[j]))continue;
+  typoCandidates.push(target.slice(0,j)+target.slice(j+1));
+  for(const c of ['a','e','i','o','u'])if(c.toLowerCase()!==target[j].toLowerCase())typoCandidates.push(target.slice(0,j)+c+target.slice(j+1));
+ }
+ const typo=shuffle(typoCandidates.filter(t=>t!==target&&!BOOKS.some(b=>b.toLowerCase()===t.toLowerCase())&&!selected.some(b=>b.toLowerCase()===t.toLowerCase())))[0];
+ const displayed=shuffle(selected.map(b=>b===target?typo:b));
+ return {text:'🐉 FINAL SPELLING TRAP — ONE of these 12 books is spelled incorrectly. Find it and TYPE the CORRECT spelling in the box below:\n\n'+displayed.join('  •  '),answer:target,typing:true,finalSpelling:true,kind:'spelling'};
+}
 function bossTimeLimit(){return state.boss<=1?8:state.boss<=4?11:state.boss<=7?15:20;}
 function clearBossCountdown(){if(bossCountdown!==null)clearInterval(bossCountdown);bossCountdown=null;}
 function updateBossCountdown(){if(state.level!==3||locked)return;const remaining=Math.max(0,Math.ceil((bossDeadline-performance.now())/1000));$('bossSeconds').textContent=remaining;$('bossTimer').classList.toggle('urgent',remaining<=5);if(remaining===0){clearBossCountdown();respond('',null,true)}}
-function startBossCountdown(){clearBossCountdown();if(state.level!==3)return;bossDeadline=performance.now()+bossTimeLimit()*1000;$('bossTimer').classList.remove('hidden','urgent');updateBossCountdown();bossCountdown=setInterval(updateBossCountdown,100)}
+function startBossCountdown(){clearBossCountdown();if(state.level!==3)return;bossDeadline=performance.now()+(current&&current.finalSpelling?8:bossTimeLimit())*1000;$('bossTimer').classList.remove('hidden','urgent');updateBossCountdown();bossCountdown=setInterval(updateBossCountdown,100)}
 function sound(type){if(muted)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();const o=audio.createOscillator(),g=audio.createGain();o.connect(g);g.connect(audio.destination);const t=audio.currentTime;o.type=type==='bad'?'sawtooth':'sine';o.frequency.setValueAtTime(type==='bad'?190:540,t);o.frequency.exponentialRampToValueAtTime(type==='bad'?80:850,t+.15);g.gain.setValueAtTime(.09,t);g.gain.exponentialRampToValueAtTime(.001,t+.18);o.start(t);o.stop(t+.2)}catch(e){}}
 function showModal(icon,title,body,button,action){document.getElementById('dragonModalRegistration').style.display=title==='THE GAUNTLET AWAITS'?'block':'none';$('modalIcon').textContent=icon;$('modalTitle').textContent=title;$('modalText').textContent=body;$('modalButton').textContent=button;modalAction=action;$('overlay').classList.remove('hidden')}
 $('modalButton').onclick=()=>{if($('modalTitle').textContent==='THE GAUNTLET AWAITS'){const firstName=dragonClean(document.getElementById('dragonFirst').value);const lastName=dragonClean(document.getElementById('dragonLast').value);if(!firstName||!lastName){document.getElementById('registryMessage').textContent='Please enter your first and last name to begin.';return;}dragonPlayer={firstName,lastName};document.getElementById('registryMessage').textContent='Ready, '+firstName+' '+lastName+'!';}const action=modalAction;$('overlay').classList.add('hidden');if(action)action();};
@@ -133,7 +150,7 @@ function startLevel(){state.round=0;state.questions=makeQuestions(state.level);l
 function showQuestion(){
  clearBossCountdown();$('bossTimer').classList.add('hidden');
  if(advanceTimer){clearTimeout(advanceTimer);advanceTimer=null}
- locked=false;current=state.questions[state.round];if(!current){finishLevel();return}
+ locked=false;current=state.questions[state.round];if(!current){finishLevel();return}if(state.level===3&&state.boss<=2)current=dragonFinalSpelling();
  setStage();
  $('feedback').textContent='';$('feedback').className='feedback';
  $('continue').classList.add('hidden');
@@ -149,7 +166,7 @@ function showQuestion(){
  $('question').insertAdjacentElement('afterend',area);
  const isTyping=state.level===2||Boolean(current.typing);
  if(isTyping){
-   const input=document.createElement('input');input.type='text';input.id='freshAnswer';input.className='answer';input.autocomplete='off';input.spellcheck=false;input.placeholder=state.level===3?'Type your answer...':'Type the correct Bible book...';input.setAttribute('aria-label','Your answer');
+   const input=document.createElement('input');input.type='text';input.id='freshAnswer';input.className='answer';input.autocomplete='off';input.spellcheck=false;input.placeholder=current.finalSpelling?'Type the correctly spelled book...':state.level===3?'Type your answer...':'Type the correct Bible book...';input.setAttribute('aria-label','Your answer');
    input.addEventListener('input',()=>{if(!locked&&norm(input.value)===norm(current.answer))respond(input.value,null)});
    input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();if(!locked&&input.value.trim())respond(input.value,null)}});
    area.appendChild(input);input.focus();
