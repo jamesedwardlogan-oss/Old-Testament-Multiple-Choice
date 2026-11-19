@@ -105,7 +105,7 @@ function bossEffect(kind){
  stage.classList.add(kind);
  if(kind!=='defeated')setTimeout(()=>stage.classList.remove(kind),1450);
 }
-function makeQuestions(level){const q=[];if(level===0){for(const i of shuffle(Array.from({length:38},(_,i)=>i)).slice(0,8)){const answer=BOOKS[i+1];const wrong=shuffle(BOOKS.filter(b=>b!==answer&&b!==BOOKS[i])).slice(0,3);q.push({text:'What book comes immediately AFTER '+BOOKS[i]+'?',answer,options:shuffle([answer,...wrong])})}}else if(level===1){for(let k=0;k<8;k++){const i=Math.floor(Math.random()*(BOOKS.length-4));const seq=BOOKS.slice(i,i+5);const pos=Math.floor(Math.random()*5);const swap=shuffle(BOOKS.filter(b=>!seq.includes(b)))[0];const shown=[...seq];shown[pos]=swap;q.push({text:'Which book does NOT belong in this sequence?',answer:swap,options:shuffle(shown.slice(0,5)),hint:seq.join(' → '),sequence:shown.join('  →  ')})}}else if(level===2){for(const book of shuffle(BOOKS).slice(0,8)){q.push({text:shuffle(book.replaceAll(' ','').split('')).join('').toUpperCase(),answer:book})}}else{
+function makeQuestions(level){const q=[];if(level===0){for(const i of shuffle(Array.from({length:BOOKS.length-1},(_,i)=>i)).slice(0,8)){const answer=BOOKS[i+1];const wrong=shuffle(BOOKS.filter(b=>b!==answer&&b!==BOOKS[i])).slice(0,3);q.push({text:'What book comes immediately AFTER '+BOOKS[i]+'?',answer,options:shuffle([answer,...wrong])})}}else if(level===1){for(let k=0;k<8;k++){const i=Math.floor(Math.random()*(BOOKS.length-4));const seq=BOOKS.slice(i,i+5);const pos=Math.floor(Math.random()*5);const swap=shuffle(BOOKS.filter(b=>!seq.includes(b)))[0];const shown=[...seq];shown[pos]=swap;q.push({text:'Which book does NOT belong in this sequence?',answer:swap,options:shuffle(shown.slice(0,5)),hint:seq.join(' → '),sequence:shown.join('  →  ')})}}else if(level===2){for(const book of shuffle(BOOKS).slice(0,8)){q.push({text:shuffle(book.replaceAll(' ','').split('')).join('').toUpperCase(),answer:book})}}else{
 // NIGHTMARE DRAGON: ten genuinely difficult, canon-order puzzles.
 // All solutions are generated from BOOKS to guarantee accurate answers.
 const rand=(min,max)=>min+Math.floor(Math.random()*(max-min+1));
@@ -123,7 +123,7 @@ i=rand(5,37);puzzles.push({text:'DRAGON RIDDLE VIII: Which book comes 2 places B
 i=rand(7,37);puzzles.push({text:'DRAGON RIDDLE IX: TYPE the book that comes 6 places AFTER the book 4 places BEFORE '+BOOKS[i]+'.',answer:BOOKS[i+2],typing:true});
 i=rand(5,39);puzzles.push({text:'DRAGON RIDDLE X — FINAL BLOW: Count 5 books BACK from '+BOOKS[i]+', then 9 books FORWARD, then 3 books BACK. TYPE the final book to defeat the dragon.',answer:BOOKS[i+1],typing:true});
 q.push(...puzzles);
-}}return q}
+}return q}
 function startLevel(){state.round=0;state.questions=makeQuestions(state.level);locked=false;setStage();updateHud();showQuestion()}
 function showQuestion(){
  clearBossCountdown();$('bossTimer').classList.add('hidden');
