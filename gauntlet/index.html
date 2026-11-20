@@ -91,7 +91,7 @@ function dragonFinalSpelling(){
  }
  const typo=shuffle(typoCandidates.filter(t=>t!==target&&!BOOKS.some(b=>b.toLowerCase()===t.toLowerCase())&&!selected.some(b=>b.toLowerCase()===t.toLowerCase())))[0];
  const displayed=shuffle(selected.map(b=>b===target?typo:b));
- return {text:'🐉 SCROLL CHECK — ONE of these 12 books is spelled incorrectly. Find it and TYPE the CORRECT spelling in the box below:\n\n'+displayed.join('  •  '),answer:target,typing:true,finalSpelling:true,kind:'spelling'};
+ return {text:'🐉 THE FINAL STRIKES!!! — ONE of these 12 books is spelled incorrectly. Find it and TYPE the CORRECT spelling in the box below:\n\n'+displayed.join('  •  '),answer:target,typing:true,finalSpelling:true,kind:'spelling'};
 }
 function bossTimeLimit(){return state.boss<=3?8:state.boss<=4?11:state.boss<=7?15:20;}
 function clearBossCountdown(){if(bossCountdown!==null)clearInterval(bossCountdown);bossCountdown=null;}
